@@ -1,26 +1,26 @@
 package com.mrhampson.ksyslog
 
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
+import java.time.Instant
+
 /**
  *
  * @author Marshall Hampson
  */
 
 fun main(args : Array<String>) {
-    var totalTime:Long = 0
-    var sampleCount = 0
-    for (i in 1..1000000) {
-        val start = System.nanoTime()
-        val message = toSyslogBytes(
-                SyslogFacility.securityMessages4,
-                SyslogLevel.LEVEL_CRITICAL,
-                1,
-                null,
-                "marshalls-mac0",
-                null,
-                null,
-                "Test Message!")
-        totalTime += System.nanoTime() - start
-        sampleCount++
+    var formatter = SyslogMessageByteFormatter(SyslogHeaderFields(
+        facility = SyslogFacility.local0,
+        version = 1,
+        appName = "%LIVEACTION",
+        localName = "marshall-macbook",
+        procId = null))
+    val socket = DatagramSocket(4321)
+    socket.use {
+        val packetData = formatter.format(SyslogLevel.LEVEL_ALERT, Instant.now(), "Testing123")
+        var packet = DatagramPacket(packetData, packetData.size, InetAddress.getLoopbackAddress(), 1234)
+        socket.send(packet)
     }
-    println("Avg: " + totalTime/sampleCount.toDouble())
 }
